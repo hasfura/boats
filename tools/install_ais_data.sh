@@ -22,11 +22,12 @@ END_MONTH=${4:-12}
 # Constants.
 DOWNLOAD_URL=https://coast.noaa.gov/htdata/CMSP/AISDataHandler/${YEAR}
 GCS_PATH=gs://hasfura/boats/ais/
+HEADER="MMSI,BaseDateTime,LAT,LON,SOG,COG,Heading,VesselName,IMO,CallSign,VesselType,Status,Length,Width,Draft,Cargo,TransceiverClass"
 
 mkdir -p ${ROOT_DIR}
 
 for month in `seq -f "%02g" ${START_MONTH} ${END_MONTH}`; do
-  touch ${ROOT_DIR}/${YEAR}_${month}.csv
+  echo ${HEADER} >> ${ROOT_DIR}/${YEAR}_${month}.csv
 
   for day in `seq -f "%02g" 1 31`; do
     url=${DOWNLOAD_URL}/AIS_${YEAR}_${month}_${day}.zip
@@ -36,8 +37,9 @@ for month in `seq -f "%02g" ${START_MONTH} ${END_MONTH}`; do
     if curl --silent --fail ${url} -o ${ROOT_DIR}/${YEAR}_${month}_${day}.zip; then
       # 2. Unzips the AIS files (turns into a single .csv).
       unzip -q ${ROOT_DIR}/${YEAR}_${month}_${day}.zip -d ${ROOT_DIR}/${YEAR}_${month}_${day}
+      exit
 
-      # 3. Concatenates the csv them into month-long files (~15GB a piece).
+      # 3. Concatenates the csv them into month-long files (~20GB a piece).
       # Throws out first line (headers).
       sed '1d' ${ROOT_DIR}/${YEAR}_${month}_${day}/AIS_${YEAR}_${month}_${day}.csv >> ${ROOT_DIR}/${YEAR}_${month}.csv
 
